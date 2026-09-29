@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Explore a Capital</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #100c09;
+      --bg2: #18120e;
+      --ink: #f4ecdc;
+      --muted: #b6a88f;
+      --brass: #d4a65a;
+      --pin: #e0533a;
+      --line: rgba(212, 166, 90, 0.22);
+      --glass: rgba(18, 13, 10, 0.55);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; background: var(--bg); color: var(--ink);
+      font-family: Inter, system-ui, sans-serif; line-height: 1.6;
+      animation: fadein 0.6s ease;
+    }
+    @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+    a { color: inherit; }
+    .serif { font-family: "Cormorant Garamond", serif; }
+
+    /* ---------- Top bar ---------- */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+      display: flex; align-items: center; gap: 10px; padding: 16px 24px;
+      transition: background 0.3s ease, backdrop-filter 0.3s ease;
+    }
+    nav.solid { background: rgba(16, 12, 9, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18); background: var(--glass); backdrop-filter: blur(10px);
+      color: var(--ink); font: inherit; font-size: 14px; font-weight: 500; text-decoration: none; cursor: pointer;
+      white-space: nowrap;
+    }
+    .pill:hover { border-color: var(--brass); }
+    .pill.saved { background: var(--pin); border-color: var(--pin); color: #fff; }
+    nav .spacer { flex: 1; }
+    nav .navtitle { opacity: 0; transition: opacity 0.3s; font-family: "Cormorant Garamond", serif; font-size: 22px; font-weight: 600; }
+    nav.solid .navtitle { opacity: 1; }
+
+    /* ---------- Hero ---------- */
+    .hero { position: relative; height: 100vh; min-height: 560px; overflow: hidden; background: #000; }
+    .slide {
+      position: absolute; inset: 0; background-size: cover; background-position: center;
+      opacity: 0; transition: opacity 1.6s ease; transform: scale(1.08);
+    }
+    .slide.show { opacity: 1; animation: kenburns 12s ease-out forwards; }
+    @keyframes kenburns { from { transform: scale(1.12) translate(1%, 1%); } to { transform: scale(1.0) translate(0, 0); } }
+    .hero::after {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0) 22%),
+        linear-gradient(0deg, rgba(16,12,9,1) 0%, rgba(16,12,9,0.55) 28%, rgba(0,0,0,0) 60%);
+    }
+    .hero-shimmer {
+      position: absolute; inset: 0;
+      background: linear-gradient(110deg, #1a140f 30%, #2a2019 50%, #1a140f 70%); background-size: 300% 100%;
+      animation: shimmer 1.8s linear infinite;
+    }
+    @keyframes shimmer { to { background-position: -300% 0; } }
+    .hero-content {
+      position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+      padding: 0 clamp(20px, 6vw, 80px) clamp(40px, 8vh, 80px);
+      max-width: 1200px;
+    }
+    .eyebrow { display: flex; align-items: center; gap: 12px; color: var(--brass); text-transform: uppercase; letter-spacing: 0.18em; font-size: 13px; font-weight: 600; }
+    .eyebrow img { width: 34px; height: 23px; object-fit: cover; border-radius: 3px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+    .hero h1 {
+      margin: 10px 0 8px; font-family: "Cormorant Garamond", serif; font-weight: 700;
+      font-size: clamp(56px, 11vw, 150px); line-height: 0.92; letter-spacing: -0.01em;
+      text-shadow: 0 4px 30px rgba(0,0,0,0.45);
+    }
+    .hero .tagline { font-size: clamp(16px, 2vw, 20px); color: #e9dfcc; max-width: 640px; margin: 0; text-shadow: 0 2px 12px rgba(0,0,0,0.6); }
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+    .chip { padding: 8px 14px; border-radius: 999px; background: var(--glass); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.14); font-size: 14px; }
+    .chip b { font-weight: 600; }
+    .dots { position: absolute; right: clamp(20px, 6vw, 80px); bottom: clamp(40px, 8vh, 80px); z-index: 3; display: flex; gap: 8px; }
+    .dots button { width: 9px; height: 9px; border-radius: 50%; border: 0; background: rgba(255,255,255,0.35); cursor: pointer; padding: 0; }
+    .dots button.on { background: #fff; width: 26px; border-radius: 6px; }
+    .hero-credit { position: absolute; right: 16px; top: 76px; z-index: 3; font-size: 11px; color: rgba(255,255,255,0.6); max-width: 50%; text-align: right; }
+    .hero-credit a { text-decoration: none; }
+
+    /* ---------- Sections ---------- */
+    main { max-width: 1280px; margin: 0 auto; padding: 0 clamp(20px, 5vw, 64px); }
+    section { padding: clamp(48px, 8vw, 96px) 0 0; }
+    .kicker { color: var(--brass); text-transform: uppercase; letter-spacing: 0.18em; font-size: 12px; font-weight: 600; margin: 0 0 8px; }
+    h2 { font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: clamp(34px, 5vw, 54px); line-height: 1.05; margin: 0 0 20px; }
+
+    .about { display: grid; grid-template-columns: 1.4fr 1fr; gap: clamp(28px, 5vw, 64px); align-items: start; }
+    .about .lead { font-size: 18px; color: #e6dccb; }
+    .about .lead p { margin: 0 0 16px; }
+    .about .note { color: var(--muted); font-size: 14px; font-style: italic; }
+    .facts { background: var(--bg2); border: 1px solid var(--line); border-radius: 20px; padding: 22px; }
+    .facts h3 { margin: 0 0 14px; font-family: "Cormorant Garamond", serif; font-size: 26px; font-weight: 600; }
+    .facts dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 10px 16px; font-size: 14.5px; }
+    .facts dt { color: var(--muted); }
+    .facts dd { margin: 0; text-align: right; }
+    .forecast { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); text-align: center; font-size: 12.5px; }
+    .forecast .day { color: var(--muted); }
+    .forecast .ico { font-size: 20px; line-height: 1.6; }
+    .links { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+    .links a {
+      display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; border-radius: 12px;
+      border: 1px solid var(--line); text-decoration: none; font-size: 14px; font-weight: 500;
+    }
+    .links a:hover { border-color: var(--brass); background: rgba(212,166,90,0.06); }
+
+    /* ---------- Gallery ---------- */
+    .gallery-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .gallery-head p { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
+    .gallery { columns: 3 320px; column-gap: 14px; }
+    .tile {
+      break-inside: avoid; margin: 0 0 14px; position: relative; border-radius: 14px; overflow: hidden;
+      cursor: zoom-in; background: var(--bg2); display: block; width: 100%; border: 0; padding: 0;
+    }
+    .tile img { display: block; width: 100%; height: auto; transition: transform 0.6s ease, opacity 0.5s ease; opacity: 0; }
+    .tile img.loaded { opacity: 1; }
+    .tile:hover img { transform: scale(1.04); }
+    .tile .cap {
+      position: absolute; left: 0; right: 0; bottom: 0; padding: 28px 14px 12px; text-align: left;
+      background: linear-gradient(0deg, rgba(0,0,0,0.75), rgba(0,0,0,0)); color: #fff; font-size: 13.5px;
+      opacity: 0; transition: opacity 0.3s ease;
+    }
+    .tile:hover .cap, .tile:focus-visible .cap { opacity: 1; }
+    .skeleton { break-inside: avoid; margin: 0 0 14px; border-radius: 14px; background: linear-gradient(110deg, #1a140f 30%, #261d16 50%, #1a140f 70%); background-size: 300% 100%; animation: shimmer 1.8s linear infinite; }
+    .empty { color: var(--muted); }
+
+    /* ---------- Map ---------- */
+    .map { border-radius: 20px; overflow: hidden; border: 1px solid var(--line); height: 420px; background: var(--bg2); }
+    .map iframe { width: 100%; height: 100%; border: 0; filter: saturate(0.85) contrast(1.05); }
+
+    /* ---------- Nearby ---------- */
+    .nearby { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+    .ncard {
+      position: relative; display: block; aspect-ratio: 4 / 5; border-radius: 18px; overflow: hidden; text-decoration: none;
+      background: var(--bg2) center / cover no-repeat; border: 1px solid var(--line);
+    }
+    .ncard::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 55%); transition: opacity 0.3s; }
+    .ncard .txt { position: absolute; left: 16px; right: 16px; bottom: 14px; z-index: 1; }
+    .ncard strong { display: block; font-family: "Cormorant Garamond", serif; font-size: 28px; font-weight: 600; line-height: 1.05; }
+    .ncard span { color: #ddd1bd; font-size: 13px; }
+    .ncard:hover { border-color: var(--brass); }
+    .ncard img.flag { position: absolute; top: 14px; left: 14px; width: 30px; height: 20px; object-fit: cover; border-radius: 3px; z-index: 1; }
+
+    footer { max-width: 1280px; margin: 0 auto; padding: 64px clamp(20px, 5vw, 64px) 40px; color: var(--muted); font-size: 13px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    footer .pager { display: flex; gap: 10px; }
+
+    /* ---------- Lightbox ---------- */
+    .lightbox {
+      position: fixed; inset: 0; z-index: 50; background: rgba(6, 4, 3, 0.96);
+      display: none; flex-direction: column; align-items: center; justify-content: center; padding: 60px 70px 20px;
+    }
+    .lightbox.open { display: flex; animation: fadein 0.25s ease; }
+    .lightbox img { max-width: 100%; max-height: calc(100vh - 150px); object-fit: contain; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+    .lightbox .meta { margin-top: 14px; text-align: center; max-width: 900px; }
+    .lightbox .meta .t { font-family: "Cormorant Garamond", serif; font-size: 24px; font-weight: 600; }
+    .lightbox .meta .c { color: var(--muted); font-size: 12.5px; }
+    .lightbox .meta .c a { color: var(--brass); }
+    .lb-btn {
+      position: absolute; top: 50%; transform: translateY(-50%); width: 50px; height: 50px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); color: #fff; font-size: 24px; cursor: pointer;
+    }
+    .lb-btn:hover { background: rgba(255,255,255,0.14); }
+    .lb-prev { left: 14px; } .lb-next { right: 14px; }
+    .lb-close { position: absolute; top: 14px; right: 18px; background: none; border: 0; color: #fff; font-size: 34px; cursor: pointer; }
+    .lb-count { position: absolute; top: 22px; left: 24px; color: var(--muted); font-size: 13px; }
+
+    .notfound { min-height: 100vh; display: grid; place-items: center; text-align: center; padding: 24px; }
+
+    @media (max-width: 860px) {
+      .about { grid-template-columns: 1fr; }
+      nav { padding: 12px 14px; }
+      nav .navtitle, .hide-sm { display: none; }
+      .dots { display: none; }
+      .lightbox { padding: 56px 12px 16px; }
+      .lb-btn { top: auto; bottom: 18px; transform: none; }
+      .map { height: 320px; }
+    }
+  </style>
+</head>
+<body>
+  <nav id="nav">
+    <a class="pill" id="back" href="index.html">← <span>Globe</span></a>
+    <span class="navtitle" id="navTitle"></span>
+    <span class="spacer"></span>
+    <a class="pill hide-sm" id="prevTop" title="Previous capital">‹</a>
+    <a class="pill hide-sm" id="nextTop" title="Next capital">›</a>
+    <button class="pill" id="save">♡ Save</button>
+  </nav>
+
+  <div id="app"></div>
+
+  <div class="lightbox" id="lb" role="dialog" aria-modal="true">
+    <span class="lb-count"></span>
+    <button class="lb-close" aria-label="Close">×</button>
+    <button class="lb-btn lb-prev" aria-label="Previous">‹</button>
+    <img alt="" />
+    <button class="lb-btn lb-next" aria-label="Next">›</button>
+    <div class="meta"><div class="t"></div><div class="c"></div></div>
+  </div>
+
+  <script src="capitals.js"></script>
+  <script>
+  (async function () {
+    const U = window.CapitalsUtil;
+    const CAPS = window.CAPITALS;
+    const code = new URLSearchParams(location.search).get("c");
+    const city = U.byCode(code);
+    const app = document.getElementById("app");
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+
+    if (!city) {
+      app.innerHTML = `<div class="notfound"><div><h2>Capital not found</h2><p><a href="index.html">Return to the globe</a></p></div></div>`;
+      return;
+    }
+
+    document.title = `${city.cap}, ${city.n} · Capitals of the World`;
+    document.getElementById("back").href = `index.html?focus=${city.c}`;
+    document.getElementById("navTitle").textContent = city.cap;
+
+    const idx = CAPS.indexOf(city);
+    const prev = CAPS[(idx - 1 + CAPS.length) % CAPS.length];
+    const next = CAPS[(idx + 1) % CAPS.length];
+    document.getElementById("prevTop").href = `city.html?c=${prev.c}`;
+    document.getElementById("nextTop").href = `city.html?c=${next.c}`;
+
+    // ---------- Save to trips ----------
+    const saveBtn = document.getElementById("save");
+    const paintSave = () => {
+      const on = U.getWishlist().includes(city.c);
+      saveBtn.classList.toggle("saved", on);
+      saveBtn.textContent = on ? "♥ Saved" : "♡ Save";
+    };
+    saveBtn.onclick = () => { U.toggleWishlist(city.c); paintSave(); };
+    paintSave();
+
+    const nav = document.getElementById("nav");
+    addEventListener("scroll", () => nav.classList.toggle("solid", scrollY > innerHeight * 0.6), { passive: true });
+
+    // ---------- Layout ----------
+    const wikiTitle = U.wikiTitle(city);
+    const mapPad = 0.09;
+    app.innerHTML = `
+      <header class="hero" id="hero">
+        <div class="hero-shimmer"></div>
+        <div class="hero-content">
+          <div class="eyebrow"><img src="${U.flagUrl(city, 80)}" alt="">Capital of ${esc(city.n)}</div>
+          <h1>${esc(city.cap)}</h1>
+          <p class="tagline" id="tagline">&nbsp;</p>
+          <div class="chips" id="chips"></div>
+        </div>
+        <div class="dots" id="dots"></div>
+        <div class="hero-credit" id="heroCredit"></div>
+      </header>
+      <main>
+        <section class="about">
+          <div>
+            <p class="kicker">Discover</p>
+            <h2>Welcome to ${esc(city.cap)}</h2>
+            <div class="lead" id="lead"><p class="empty">Gathering stories about ${esc(city.cap)}…</p></div>
+            ${city.note ? `<p class="note">${esc(city.note)}</p>` : ""}
+          </div>
+          <aside class="facts">
+            <h3>At a glance</h3>
+            <dl id="facts">
+              <dt>Country</dt><dd>${esc(city.n)}</dd>
+              <dt>Coordinates</dt><dd>${Math.abs(city.lat).toFixed(2)}° ${city.lat >= 0 ? "N" : "S"}, ${Math.abs(city.lon).toFixed(2)}° ${city.lon >= 0 ? "E" : "W"}</dd>
+            </dl>
+            <div class="forecast" id="forecast"></div>
+            <div class="links">
+              <a href="https://en.wikivoyage.org/wiki/${encodeURIComponent(wikiTitle.replace(/ /g, "_"))}" target="_blank" rel="noopener">Full travel guide <span>↗</span></a>
+              <a href="https://www.google.com/maps/search/${encodeURIComponent("things to do in " + city.cap + ", " + city.n)}" target="_blank" rel="noopener">Things to do on the map <span>↗</span></a>
+              <a href="https://www.google.com/travel/flights?q=${encodeURIComponent("Flights to " + city.cap)}" target="_blank" rel="noopener">Find flights <span>↗</span></a>
+            </div>
+          </aside>
+        </section>
+
+        <section>
+          <div class="gallery-head">
+            <div><p class="kicker">Scenery</p><h2>${esc(city.cap)} through the lens</h2></div>
+            <p id="galleryNote">Photos from Wikimedia Commons</p>
+          </div>
+          <div class="gallery" id="gallery">
+            ${[280, 200, 340, 240, 300, 220].map((h) => `<div class="skeleton" style="height:${h}px"></div>`).join("")}
+          </div>
+        </section>
+
+        <section>
+          <p class="kicker">Where it is</p>
+          <h2>Find your way around</h2>
+          <div class="map">
+            <iframe loading="lazy" title="Map of ${esc(city.cap)}"
+              src="https://www.openstreetmap.org/export/embed.html?bbox=${city.lon - mapPad * 1.6},${city.lat - mapPad},${city.lon + mapPad * 1.6},${city.lat + mapPad}&layer=mapnik&marker=${city.lat},${city.lon}"></iframe>
+          </div>
+        </section>
+
+        <section>
+          <p class="kicker">Keep exploring</p>
+          <h2>Capitals nearby</h2>
+          <div class="nearby" id="nearby"></div>
+        </section>
+      </main>
+      <footer>
+        <div>Photos: Wikimedia Commons contributors · Text: Wikipedia &amp; Wikivoyage (CC BY-SA) · Weather: Open-Meteo</div>
+        <div class="pager">
+          <a class="pill" href="city.html?c=${prev.c}">‹ ${esc(prev.cap)}</a>
+          <a class="pill" href="city.html?c=${next.c}">${esc(next.cap)} ›</a>
+        </div>
+      </footer>`;
+
+    // ---------- Data sources ----------
+    const getJSON = async (url) => {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(r.status);
+      return r.json();
+    };
+    const restTitle = (t) => encodeURIComponent(t.replace(/ /g, "_"));
+    const stripHtml = (h) => { const d = document.createElement("div"); d.innerHTML = h || ""; return d.textContent.replace(/\s+/g, " ").trim(); };
+
+    const cacheKey = `capital-v2-${city.c}`;
+    const cached = (() => { try { return JSON.parse(sessionStorage.getItem(cacheKey)); } catch { return null; } })();
+
+    // Every photo must be geotagged within this distance of the city centre
+    // (smaller for compact capitals such as Valletta or Vatican City).
+    const CITY_RADIUS_KM = city.r || 12;
+    const WIDE_RADIUS_KM = Math.min(CITY_RADIUS_KM * 2, 25);
+    // Capitals close enough that their photo areas could overlap (e.g. Rome / Vatican, Kinshasa / Brazzaville).
+    const neighbours = CAPS.filter((c) => c !== city && U.distanceKm(city, c) < WIDE_RADIUS_KM + (c.r || 12));
+    const COMMONS_API = "https://commons.wikimedia.org/w/api.php";
+    const IMG_PROPS = "&prop=imageinfo|coordinates&coprimary=all&colimit=max&iiprop=url|size|mime|extmetadata&iiurlwidth=1920&iiextmetadatafilter=Artist|LicenseShortName|ImageDescription|Categories&format=json&formatversion=2&origin=*";
+    const BAD = /\b(flag|coat[ _]of[ _]arms|seal|emblem|logo|map|locator|location|symbol|icon|diagram|chart|plan|banknote|coin|stamp|signature|poster|montage|collage|portrait|headshot|insect|beetle|spider|moth|butterfly|fly|bee|wasp|bird|frog|lizard|skink|snake|dragonfly|damselfly|juvenile|male|female|mushroom|fungus|lichen|flower|specimen|museum[ _]object|moulage|fossil|skeleton|dinosaur|exhibit|mnhn|mapillary|lexus|toyota|nissan|honda|land rover|mercedes|bmw|patrol|navy|military|troops|soldiers|security|atelier|workshop|formation|conférence|journée|réunion|tournoi|football|cérémonie|ceremony|rotary|edit-?a-?thon|wikipedia|wiki loves|kingfisher|munia|myna|heron|egret|pigeon|parrot|lorikeet|gecko|monkey|donkey|âne|secretary|embassy|coast guard|uscgc|usaid|meets|speaks|hosts|déchets|wikipermanence|https?|boeing|airbus|aircraft|daguerre|engraving|gravure|lithograph|painting|drawing|interior of a|document|manuscript|letter|election|meeting|conference|summit|minister|president|ambassador|visit|detail|konstruktionsdetail)\b|\b1[89]\d\d\b|\b19[0-4]\d\b|\([A-Z][a-z]+ [a-z]{3,}/i;
+
+    // Commons categories that mark wildlife, specimens and portraits rather than city scenery.
+    const BAD_CATEGORY = /\b(birds|aves|animals|insects|mammals|reptiles|amphibians|fishes|fauna|flora|plants|species|taxon|specimens|portraits|maps|flags|coats of arms|inaturalist|observation\.org|biodiversity|mapillary|automobiles|vehicles|cars|military|navy|army)\b/i;
+    // Species categories look like "Lonchura caniceps" or "Pantoporia venilia dampierensis".
+    const SPECIES_CATEGORY = /^[A-Z][a-z]+ [a-z]{3,}(ae|us|um|is|ii|ensis|a|i)( [a-z]+)?$/;
+    const badCategories = (value) => BAD_CATEGORY.test(value) || value.split("|").some((c) => SPECIES_CATEGORY.test(c.trim()));
+
+    // True when any of the file's coordinates (camera or object location) lies inside the city
+    // and is not inside a neighbouring capital.
+    function inCity(page, radiusKm) {
+      return (page.coordinates || []).some((co) => {
+        const pt = { lat: co.lat, lon: co.lon };
+        const d = U.distanceKm(city, pt);
+        return d <= radiusKm && !neighbours.some((n) => U.distanceKm(n, pt) <= Math.min(d, n.r || 12));
+      });
+    }
+
+    // Titles naming a different country (or a neighbouring capital) point to a mis-geotagged photo.
+    const reEsc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const ownNames = [city.n, city.cap, city.w, city.a].filter(Boolean);
+    const foreignNames = [...CAPS.filter((c) => c !== city).map((c) => c.n), ...neighbours.map((c) => c.cap)]
+      .filter((name) => !ownNames.some((own) => own.toLowerCase().includes(name.toLowerCase())));
+    const FOREIGN = new RegExp(`\\b(${foreignNames.map(reEsc).join("|")})\\b`, "i");
+    function mentionsElsewhere(title) {
+      let t = title;
+      for (const own of ownNames) t = t.replace(new RegExp(reEsc(own), "gi"), " ");
+      return FOREIGN.test(t);
+    }
+
+    function normalizeImage(page, radiusKm = CITY_RADIUS_KM) {
+      const ii = page.imageinfo && page.imageinfo[0];
+      if (!ii || !ii.thumburl) return null;
+      if (!inCity(page, radiusKm)) return null;
+      if (mentionsElsewhere((page.title || "").replace(/_/g, " "))) return null;
+      if (!/jpe?g/i.test(ii.mime || "")) return null;
+      const aspect = ii.width / ii.height;
+      if (ii.width < 1000 || aspect < 1.15 || aspect > 3.2) return null;
+      const title = page.title || "";
+      if (BAD.test(title.replace(/_/g, " "))) return null;
+      const md = ii.extmetadata || {};
+      if (badCategories((md.Categories && md.Categories.value) || "")) return null;
+      const cleanTitle = title.replace(/^File:/, "").replace(/\.[a-z]+$/i, "").replace(/[_]+/g, " ").replace(/\s*\(\d+\)\s*$/, "").trim();
+      const cameraName = /^(DSC|IMG|P\d|DJI|PANO|GOPR|\d)[\s_-]?\d*/i.test(cleanTitle) || cleanTitle.length < 6;
+      let caption = cameraName ? stripHtml(md.ImageDescription && md.ImageDescription.value) : cleanTitle;
+      if (!caption || caption.length > 140) caption = cameraName ? `${city.cap}` : cleanTitle;
+      if (BAD.test(caption) || mentionsElsewhere(caption)) return null;
+      const full = ii.thumburl;
+      const thumb = /\/1920px-/.test(full) ? full.replace("/1920px-", "/960px-") : full;
+      return {
+        key: title,
+        full, thumb, w: ii.width, h: ii.height,
+        caption: caption.slice(0, 140),
+        artist: stripHtml(md.Artist && md.Artist.value).slice(0, 80),
+        license: stripHtml(md.LicenseShortName && md.LicenseShortName.value),
+        page: ii.descriptionurl,
+      };
+    }
+
+    // Commons search restricted to photos geotagged inside the city.
+    async function commonsSearch(query, limit = 20, radiusKm = CITY_RADIUS_KM) {
+      const q = `${query} nearcoord:${Math.round(radiusKm * 1000)}m,${city.lat},${city.lon}`.trim();
+      const url = `${COMMONS_API}?action=query&generator=search&gsrnamespace=6&gsrlimit=${limit}&gsrsearch=${encodeURIComponent(q)}${IMG_PROPS}`;
+      const data = await getJSON(url);
+      const pages = (data.query && data.query.pages) || [];
+      return pages.sort((a, b) => a.index - b.index).map((p) => normalizeImage(p, radiusKm)).filter(Boolean);
+    }
+
+    async function articleImages(title) {
+      const list = await getJSON(`https://en.wikipedia.org/api/rest_v1/page/media-list/${restTitle(title)}`);
+      const titles = (list.items || [])
+        .filter((i) => i.type === "image" && /\.jpe?g$/i.test(i.title))
+        .map((i) => i.title)
+        .slice(0, 50);
+      if (!titles.length) return [];
+      // Ask Commons (not Wikipedia) so the files' geotags come back; ungeotagged images are dropped.
+      const data = await getJSON(`${COMMONS_API}?action=query&titles=${encodeURIComponent(titles.join("|"))}${IMG_PROPS}`);
+      const pages = (data.query && data.query.pages) || [];
+      const order = new Map(titles.map((t, i) => [t.replace(/_/g, " "), i]));
+      return pages
+        .sort((a, b) => (order.get(a.title) ?? 99) - (order.get(b.title) ?? 99))
+        .map((p) => normalizeImage(p)).filter(Boolean);
+    }
+
+    async function loadImages() {
+      const settle = (p) => p.catch(() => []);
+      const search = (radiusKm) => Promise.all([
+        settle(articleImages(wikiTitle)),
+        settle(commonsSearch("incategory:Featured_pictures_on_Wikimedia_Commons", 20, radiusKm)),
+        // Named after the city *and* geotagged inside it.
+        settle(commonsSearch(`"${city.cap.replace(/"/g, "")}"`, 40, radiusKm)),
+        settle(commonsSearch("skyline OR cityscape OR panorama", 20, radiusKm)),
+        settle(commonsSearch("landmark OR cathedral OR mosque OR temple OR palace OR square OR park OR street", 25, radiusKm)),
+        settle(commonsSearch("incategory:Quality_images", 40, radiusKm)),
+      ]);
+      let lists = await search(CITY_RADIUS_KM);
+      // Too few geotagged photos in the centre: widen to the metro area (still that city only).
+      if (lists.reduce((n, l) => n + l.length, 0) < 12) lists = await search(WIDE_RADIUS_KM);
+      // Rank 0 = most iconic source; the hero slideshow prefers low ranks.
+      lists.forEach((l, rank) => l.forEach((img) => { img.rank = rank; }));
+      // Interleave the sources so the gallery mixes skylines, landmarks and streets.
+      // At most two shots from the same series (e.g. "Notre Dame -- 2014 -- 1349", "... 1468").
+      const seen = new Set(), series = new Map(), out = [];
+      for (let i = 0; out.length < 48 && lists.some((l) => i < l.length); i++) {
+        for (const l of lists) {
+          const img = l[i];
+          if (!img || seen.has(img.key)) continue;
+          seen.add(img.key);
+          const s = img.caption.toLowerCase().replace(/[\d\W_]+/g, " ").trim();
+          if ((series.get(s) || 0) >= 2) continue;
+          series.set(s, (series.get(s) || 0) + 1);
+          out.push(img);
+        }
+      }
+      return out.slice(0, 48);
+    }
+
+    async function loadSummaries() {
+      const [wp, voy] = await Promise.all([
+        getJSON(`https://en.wikipedia.org/api/rest_v1/page/summary/${restTitle(wikiTitle)}`).catch(() => null),
+        (async () => {
+          for (const t of [wikiTitle, `${city.cap} (${city.n})`, city.cap]) {
+            try {
+              const s = await getJSON(`https://en.wikivoyage.org/api/rest_v1/page/summary/${restTitle(t)}`);
+              if (s.type !== "disambiguation" && s.extract && s.extract.length > 60) return s;
+            } catch {}
+          }
+          return null;
+        })(),
+      ]);
+      return {
+        description: wp && wp.description,
+        wpExtract: wp && wp.extract,
+        voyExtract: voy && voy.extract,
+      };
+    }
+
+    // ---------- Render: text ----------
+    const summariesP = cached ? Promise.resolve(cached.summary) : loadSummaries();
+    summariesP.then((s) => {
+      const tagline = document.getElementById("tagline");
+      const desc = s.description ? s.description.charAt(0).toUpperCase() + s.description.slice(1) : `The capital of ${city.n}`;
+      tagline.textContent = desc;
+      const paras = [];
+      if (s.voyExtract) paras.push(s.voyExtract);
+      if (s.wpExtract && (!s.voyExtract || s.wpExtract.slice(0, 60) !== s.voyExtract.slice(0, 60))) paras.push(s.wpExtract);
+      document.getElementById("lead").innerHTML = paras.length
+        ? paras.map((p) => `<p>${esc(p)}</p>`).join("")
+        : `<p>${esc(city.cap)} is the capital of ${esc(city.n)}.</p>`;
+    });
+
+    // ---------- Render: weather + local time ----------
+    const WX = { 0: ["☀️", "Clear"], 1: ["🌤️", "Mostly clear"], 2: ["⛅", "Partly cloudy"], 3: ["☁️", "Overcast"], 45: ["🌫️", "Fog"], 48: ["🌫️", "Fog"],
+      51: ["🌦️", "Drizzle"], 53: ["🌦️", "Drizzle"], 55: ["🌦️", "Drizzle"], 56: ["🌧️", "Freezing drizzle"], 57: ["🌧️", "Freezing drizzle"],
+      61: ["🌧️", "Light rain"], 63: ["🌧️", "Rain"], 65: ["🌧️", "Heavy rain"], 66: ["🌧️", "Freezing rain"], 67: ["🌧️", "Freezing rain"],
+      71: ["🌨️", "Light snow"], 73: ["🌨️", "Snow"], 75: ["❄️", "Heavy snow"], 77: ["🌨️", "Snow grains"], 80: ["🌦️", "Showers"], 81: ["🌦️", "Showers"], 82: ["⛈️", "Heavy showers"],
+      85: ["🌨️", "Snow showers"], 86: ["🌨️", "Snow showers"], 95: ["⛈️", "Thunderstorm"], 96: ["⛈️", "Thunderstorm"], 99: ["⛈️", "Thunderstorm"] };
+    const wx = (c) => WX[c] || ["🌡️", "—"];
+    const useF = /^en-US/i.test(navigator.language);
+    const temp = (c) => `${Math.round(useF ? c * 9 / 5 + 32 : c)}°${useF ? "F" : "C"}`;
+
+    getJSON(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=5`)
+      .then((w) => {
+        const chips = document.getElementById("chips");
+        const facts = document.getElementById("facts");
+        const tz = w.timezone;
+        const fmtTime = () => new Intl.DateTimeFormat([], { hour: "numeric", minute: "2-digit", timeZone: tz }).format(new Date());
+        const [ico, label] = wx(w.current.weather_code);
+        chips.innerHTML = `
+          <span class="chip">🕒 Local time <b id="clock">${fmtTime()}</b></span>
+          <span class="chip">${ico} <b>${temp(w.current.temperature_2m)}</b> · ${label}</span>`;
+        setInterval(() => { const el = document.getElementById("clock"); if (el) el.textContent = fmtTime(); }, 20000);
+        facts.insertAdjacentHTML("beforeend", `<dt>Time zone</dt><dd>${esc(tz.replace(/_/g, " "))}</dd><dt>Right now</dt><dd>${ico} ${temp(w.current.temperature_2m)}, ${label.toLowerCase()}</dd>`);
+        document.getElementById("forecast").innerHTML = w.daily.time.map((d, i) => {
+          const day = new Date(d + "T12:00:00").toLocaleDateString([], { weekday: "short" });
+          return `<div><div class="day">${i === 0 ? "Today" : day}</div><div class="ico">${wx(w.daily.weather_code[i])[0]}</div><div>${temp(w.daily.temperature_2m_max[i])}</div><div class="day">${temp(w.daily.temperature_2m_min[i])}</div></div>`;
+        }).join("");
+      })
+      .catch(() => {});
+
+    // ---------- Render: images ----------
+    let images = [];
+    try {
+      images = cached ? cached.images : await loadImages();
+    } catch { images = []; }
+    const summary = await summariesP.catch(() => ({}));
+
+    try { sessionStorage.setItem(cacheKey, JSON.stringify({ summary, images })); } catch {}
+
+    const heroImgs = images.filter((i) => i.w / i.h >= 1.3 && i.w / i.h <= 2.2)
+      .map((img, order) => ({ img, order }))
+      .sort((a, b) => ((a.img.rank ?? 9) < 3 ? 0 : 1) - ((b.img.rank ?? 9) < 3 ? 0 : 1) || a.order - b.order)
+      .map((x) => x.img)
+      .slice(0, 6);
+    setupHero(heroImgs);
+    renderGallery(images);
+    renderNearby();
+
+    function setupHero(list) {
+      const hero = document.getElementById("hero");
+      const dots = document.getElementById("dots");
+      const credit = document.getElementById("heroCredit");
+      if (!list.length) {
+        hero.querySelector(".hero-shimmer").style.animation = "none";
+        hero.querySelector(".hero-shimmer").style.background = "radial-gradient(ellipse at 30% 30%, #3a2a1c, #100c09)";
+        return;
+      }
+      const slides = list.map((img) => {
+        const el = document.createElement("div");
+        el.className = "slide";
+        hero.insertBefore(el, hero.querySelector(".hero-content"));
+        return el;
+      });
+      dots.innerHTML = list.length > 1 ? list.map((_, i) => `<button aria-label="Photo ${i + 1}"></button>`).join("") : "";
+      let cur = -1, timer = null;
+      const load = (i) => new Promise((res) => {
+        if (slides[i].dataset.ready) return res();
+        const im = new Image();
+        im.onload = im.onerror = () => { slides[i].style.backgroundImage = `url("${list[i].full}")`; slides[i].dataset.ready = 1; res(); };
+        im.src = list[i].full;
+      });
+      async function show(i) {
+        await load(i);
+        slides.forEach((s, j) => s.classList.toggle("show", j === i));
+        [...dots.children].forEach((d, j) => d.classList.toggle("on", j === i));
+        const img = list[i];
+        credit.innerHTML = img.page ? `<a href="${esc(img.page)}" target="_blank" rel="noopener">📷 ${esc(img.artist || "Wikimedia Commons")}${img.license ? " · " + esc(img.license) : ""}</a>` : "";
+        cur = i;
+        hero.querySelector(".hero-shimmer").style.opacity = 0;
+        if (list.length > 1) load((i + 1) % list.length);
+        clearTimeout(timer);
+        if (list.length > 1) timer = setTimeout(() => show((cur + 1) % list.length), 7000);
+      }
+      [...dots.children].forEach((d, i) => d.onclick = () => show(i));
+      show(0);
+    }
+
+    function renderGallery(list) {
+      const g = document.getElementById("gallery");
+      if (!list.length) {
+        g.innerHTML = `<p class="empty">No photos geotagged inside ${esc(city.cap)} were found right now. Check your connection and refresh.</p>`;
+        return;
+      }
+      document.getElementById("galleryNote").textContent = `${list.length} photo${list.length === 1 ? "" : "s"} geotagged in ${city.cap} · tap to enlarge`;
+      g.innerHTML = list.map((img, i) => `
+        <button class="tile" data-i="${i}" aria-label="${esc(img.caption)}">
+          <img loading="lazy" src="${esc(img.thumb)}" width="${img.w}" height="${img.h}" alt="${esc(img.caption)}" onload="this.classList.add('loaded')">
+          <span class="cap">${esc(img.caption)}</span>
+        </button>`).join("");
+      g.addEventListener("click", (e) => { const t = e.target.closest(".tile"); if (t) openLb(+t.dataset.i); });
+    }
+
+    // ---------- Lightbox ----------
+    const lb = document.getElementById("lb");
+    const lbImg = lb.querySelector("img");
+    let lbIdx = 0;
+    function openLb(i) {
+      lbIdx = (i + images.length) % images.length;
+      const img = images[lbIdx];
+      lbImg.src = img.thumb;
+      const hi = new Image();
+      hi.onload = () => { if (images[lbIdx] === img) lbImg.src = img.full; };
+      hi.src = img.full;
+      lb.querySelector(".t").textContent = img.caption;
+      lb.querySelector(".c").innerHTML = `Photo: ${esc(img.artist || "Unknown")}${img.license ? " · " + esc(img.license) : ""}${img.page ? ` · <a href="${esc(img.page)}" target="_blank" rel="noopener">Source</a>` : ""}`;
+      lb.querySelector(".lb-count").textContent = `${lbIdx + 1} / ${images.length}`;
+      lb.classList.add("open");
+      document.body.style.overflow = "hidden";
+    }
+    function closeLb() { lb.classList.remove("open"); document.body.style.overflow = ""; }
+    lb.querySelector(".lb-close").onclick = closeLb;
+    lb.querySelector(".lb-prev").onclick = () => openLb(lbIdx - 1);
+    lb.querySelector(".lb-next").onclick = () => openLb(lbIdx + 1);
+    lb.addEventListener("click", (e) => { if (e.target === lb) closeLb(); });
+    addEventListener("keydown", (e) => {
+      if (!lb.classList.contains("open")) return;
+      if (e.key === "Escape") closeLb();
+      if (e.key === "ArrowLeft") openLb(lbIdx - 1);
+      if (e.key === "ArrowRight") openLb(lbIdx + 1);
+    });
+    let touchX = null;
+    lb.addEventListener("touchstart", (e) => { touchX = e.touches[0].clientX; }, { passive: true });
+    lb.addEventListener("touchend", (e) => {
+      if (touchX == null) return;
+      const dx = e.changedTouches[0].clientX - touchX;
+      if (Math.abs(dx) > 50) openLb(lbIdx + (dx < 0 ? 1 : -1));
+      touchX = null;
+    });
+
+    // ---------- Nearby capitals ----------
+    function renderNearby() {
+      const near = CAPS.filter((c) => c !== city)
+        .map((c) => ({ c, d: U.distanceKm(city, c) }))
+        .sort((a, b) => a.d - b.d)
+        .slice(0, 8);
+      const box = document.getElementById("nearby");
+      box.innerHTML = near.map(({ c, d }) => `
+        <a class="ncard" href="city.html?c=${c.c}" data-code="${c.c}">
+          <img class="flag" src="${U.flagUrl(c, 40)}" alt="">
+          <div class="txt"><strong>${esc(c.cap)}</strong><span>${esc(c.n)} · ${Math.round(d).toLocaleString()} km away</span></div>
+        </a>`).join("");
+      // Lazy-load a lead photo for each card.
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((en) => {
+          if (!en.isIntersecting) return;
+          io.unobserve(en.target);
+          const c = U.byCode(en.target.dataset.code);
+          getJSON(`https://en.wikipedia.org/api/rest_v1/page/summary/${restTitle(U.wikiTitle(c))}`)
+            .then((s) => { const src = s.thumbnail && s.thumbnail.source; if (src) en.target.style.backgroundImage = `url("${src.replace(/\/\d+px-/, "/500px-")}")`; })
+            .catch(() => {});
+        });
+      }, { rootMargin: "300px" });
+      box.querySelectorAll(".ncard").forEach((el) => io.observe(el));
+    }
+  })();
+
+  </script>
+</body>
+</html>

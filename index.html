@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Capitals of the World</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0d0a08;
+      --ink: #f3ead8;
+      --muted: #b9ab91;
+      --brass: #d4a65a;
+      --pin: #e0533a;
+      --panel: rgba(24, 18, 14, 0.78);
+      --line: rgba(212, 166, 90, 0.28);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; }
+    body {
+      background: radial-gradient(ellipse at 50% 35%, #2a1f17 0%, #140f0b 55%, var(--bg) 100%);
+      color: var(--ink);
+      font-family: Inter, system-ui, sans-serif;
+    }
+    #scene { position: fixed; inset: 0; display: block; outline: none; }
+
+    header {
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+      padding: 22px 28px; pointer-events: none;
+    }
+    header > * { pointer-events: auto; }
+    .brand h1 {
+      margin: 0; font-family: "Cormorant Garamond", serif; font-weight: 600;
+      font-size: clamp(28px, 4vw, 44px); letter-spacing: 0.01em; line-height: 1;
+    }
+    .brand p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+
+    .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+    .search { position: relative; }
+    .search input {
+      width: 260px; padding: 11px 14px 11px 38px; border-radius: 999px;
+      border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+      font: inherit; font-size: 14px; outline: none; backdrop-filter: blur(8px);
+    }
+    .search input:focus { border-color: var(--brass); }
+    .search svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); opacity: 0.6; }
+    .results {
+      position: absolute; top: calc(100% + 6px); right: 0; left: 0; max-height: 320px; overflow-y: auto;
+      background: rgba(24, 18, 14, 0.96); border: 1px solid var(--line); border-radius: 14px;
+      display: none; padding: 6px; z-index: 10;
+    }
+    .results.open { display: block; }
+    .results button {
+      display: flex; width: 100%; align-items: center; gap: 10px; text-align: left;
+      background: none; border: 0; color: var(--ink); font: inherit; font-size: 14px;
+      padding: 8px 10px; border-radius: 8px; cursor: pointer;
+    }
+    .results button:hover, .results button.active { background: rgba(212, 166, 90, 0.16); }
+    .results img { width: 22px; height: 15px; object-fit: cover; border-radius: 2px; }
+    .results small { color: var(--muted); margin-left: auto; }
+
+    .btn {
+      padding: 11px 16px; border-radius: 999px; border: 1px solid var(--line);
+      background: var(--panel); color: var(--ink); font: inherit; font-size: 14px; font-weight: 500;
+      cursor: pointer; backdrop-filter: blur(8px); display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn:hover { border-color: var(--brass); }
+    .btn .count { background: var(--pin); color: #fff; border-radius: 999px; padding: 1px 7px; font-size: 12px; }
+
+    #tooltip {
+      position: fixed; pointer-events: none; z-index: 5;
+      background: rgba(20, 15, 11, 0.92); border: 1px solid var(--line); border-radius: 12px;
+      padding: 8px 12px; display: none; align-items: center; gap: 10px;
+      transform: translate(14px, -50%); white-space: nowrap;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    #tooltip img { width: 28px; height: 19px; object-fit: cover; border-radius: 3px; }
+    #tooltip strong { font-family: "Cormorant Garamond", serif; font-size: 20px; font-weight: 600; display: block; line-height: 1.1; }
+    #tooltip span { color: var(--muted); font-size: 12px; }
+
+    #card {
+      position: fixed; left: 28px; bottom: 28px; width: min(340px, calc(100vw - 32px));
+      background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
+      padding: 18px; backdrop-filter: blur(10px); display: none;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.45);
+    }
+    #card.open { display: block; animation: rise 0.35s ease; }
+    @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+    #card .top { display: flex; align-items: center; gap: 12px; }
+    #card img.flag { width: 40px; height: 27px; object-fit: cover; border-radius: 4px; }
+    #card h2 { margin: 0; font-family: "Cormorant Garamond", serif; font-size: 30px; font-weight: 600; line-height: 1; }
+    #card .country { color: var(--muted); font-size: 13px; margin-top: 3px; }
+    #card .close { margin-left: auto; background: none; border: 0; color: var(--muted); font-size: 22px; cursor: pointer; align-self: flex-start; }
+    #card .explore {
+      margin-top: 14px; width: 100%; justify-content: center; background: var(--pin); border-color: var(--pin);
+      color: #fff; font-weight: 600;
+    }
+    #card .explore:hover { filter: brightness(1.1); }
+
+    #trips {
+      position: fixed; top: 0; right: 0; bottom: 0; width: min(360px, 100vw);
+      background: rgba(20, 15, 11, 0.96); border-left: 1px solid var(--line);
+      transform: translateX(100%); transition: transform 0.35s ease; z-index: 20;
+      display: flex; flex-direction: column;
+    }
+    #trips.open { transform: none; }
+    #trips .head { display: flex; align-items: center; justify-content: space-between; padding: 22px 22px 12px; }
+    #trips h3 { margin: 0; font-family: "Cormorant Garamond", serif; font-size: 28px; font-weight: 600; }
+    #trips .close { background: none; border: 0; color: var(--muted); font-size: 24px; cursor: pointer; }
+    #trips ul { list-style: none; margin: 0; padding: 0 12px 20px; overflow-y: auto; }
+    #trips li a {
+      display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 10px;
+      color: var(--ink); text-decoration: none;
+    }
+    #trips li a:hover { background: rgba(212, 166, 90, 0.12); }
+    #trips li img { width: 32px; height: 22px; object-fit: cover; border-radius: 3px; }
+    #trips li small { display: block; color: var(--muted); }
+    #trips .empty { color: var(--muted); padding: 0 22px; font-size: 14px; line-height: 1.6; }
+
+    .hint {
+      position: fixed; bottom: 22px; right: 28px; color: var(--muted); font-size: 12.5px;
+      letter-spacing: 0.02em; text-align: right; pointer-events: none;
+    }
+    .hint b { color: var(--pin); font-weight: 600; }
+
+    #loader {
+      position: fixed; inset: 0; display: grid; place-items: center; z-index: 30;
+      background: var(--bg); transition: opacity 0.8s ease;
+      font-family: "Cormorant Garamond", serif; font-size: 22px; color: var(--muted);
+    }
+    #loader.done { opacity: 0; pointer-events: none; }
+    #fade { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity 0.6s ease; z-index: 40; }
+    #fade.on { opacity: 1; }
+
+    @media (max-width: 720px) {
+      header { flex-direction: column; padding: 16px; }
+      .controls { justify-content: flex-start; width: 100%; }
+      .search, .search input { width: 100%; }
+      .search { flex: 1 1 100%; }
+      #card { left: 16px; bottom: 16px; }
+      .hint { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="scene" tabindex="0"></canvas>
+
+  <header>
+    <div class="brand">
+      <h1>Capitals of the World</h1>
+      <p>Spin the globe and tap a pin to explore a capital city.</p>
+    </div>
+    <div class="controls">
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Search a capital or country…" autocomplete="off" />
+        <div class="results" id="results"></div>
+      </div>
+      <button class="btn" id="surprise" title="Take me somewhere random">✦ Surprise me</button>
+      <button class="btn" id="tripsBtn">♥ My trips <span class="count" id="tripCount">0</span></button>
+    </div>
+  </header>
+
+  <div id="tooltip"><img alt="" /><div><strong></strong><span></span></div></div>
+
+  <div id="card">
+    <div class="top">
+      <img class="flag" alt="" />
+      <div><h2></h2><div class="country"></div></div>
+      <button class="close" aria-label="Close">×</button>
+    </div>
+    <button class="btn explore">Explore the city →</button>
+  </div>
+
+  <aside id="trips">
+    <div class="head"><h3>My trips</h3><button class="close" aria-label="Close">×</button></div>
+    <ul id="tripList"></ul>
+  </aside>
+
+  <div class="hint">Drag to spin · Scroll to zoom · Click a <b>red pin</b> to visit</div>
+  <div id="loader">Unfolding the map…</div>
+  <div id="fade"></div>
+
+  <script src="capitals.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+    import * as topojson from "https://cdn.jsdelivr.net/npm/topojson-client@3/+esm";
+
+    const U = window.CapitalsUtil;
+    const CAPS = window.CAPITALS;
+
+    // ---------- Materials from capitals_globe.mtl ----------
+    // Fallback copy of the MTL values, used when the page is opened from file://
+    // (browsers block fetching local files there).
+    const MTL_FALLBACK = `
+newmtl brass
+Kd 0.5841 0.3613 0.1119
+Ns 130
+newmtl ocean
+Kd 0.0123 0.0356 0.0844
+Ns 90
+newmtl land
+Kd 0.8632 0.7913 0.6308
+Ns 40
+newmtl pin
+Kd 0.7454 0.0823 0.0423
+Ns 130
+newmtl base_wood
+Kd 0.0423 0.0262 0.0176
+Ns 80`;
+
+    function parseMTL(text) {
+      const mats = {};
+      let cur = null;
+      for (const raw of text.split(/\r?\n/)) {
+        const [key, ...v] = raw.trim().split(/\s+/);
+        if (key === "newmtl") cur = mats[v[0]] = {};
+        else if (cur && (key === "Kd" || key === "Ks")) cur[key] = v.map(Number);
+        else if (cur && (key === "Ns" || key === "d")) cur[key] = Number(v[0]);
+      }
+      return mats;
+    }
+
+    async function loadMTL() {
+      try {
+        const res = await fetch("capitals_globe.mtl");
+        if (!res.ok) throw new Error();
+        return parseMTL(await res.text());
+      } catch {
+        return parseMTL(MTL_FALLBACK);
+      }
+    }
+
+    // Convert MTL Phong values into a physically based material.
+    function toMaterial(m, { metalness = 0 } = {}) {
+      const color = new THREE.Color().setRGB(...m.Kd, THREE.LinearSRGBColorSpace);
+      const roughness = Math.min(1, Math.sqrt(2 / ((m.Ns || 50) + 2)) * 1.6);
+      return new THREE.MeshStandardMaterial({ color, roughness, metalness });
+    }
+
+    // ---------- Scene ----------
+    const canvas = document.getElementById("scene");
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.85;
+
+    const scene = new THREE.Scene();
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+    camera.position.set(0, 0.35, 4.4);
+
+    const controls = new OrbitControls(camera, canvas);
+    controls.target.set(0, -0.15, 0);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.enablePan = false;
+    controls.minDistance = 1.7;
+    controls.maxDistance = 7;
+    controls.maxPolarAngle = Math.PI * 0.72;
+    controls.rotateSpeed = 0.6;
+
+    scene.add(new THREE.HemisphereLight(0xfff1dc, 0x2a1a10, 0.6));
+    const key = new THREE.DirectionalLight(0xffe2b8, 1.6);
+    key.position.set(3, 4, 5);
+    scene.add(key);
+    const rim = new THREE.DirectionalLight(0x9fb8ff, 0.9);
+    rim.position.set(-4, 1, -3);
+    scene.add(rim);
+
+    const mtl = await loadMTL();
+    const M = {
+      brass: toMaterial(mtl.brass, { metalness: 1 }),
+      pin: toMaterial(mtl.pin, { metalness: 0.15 }),
+      wood: toMaterial(mtl.base_wood, { metalness: 0 }),
+    };
+    M.wood.roughness = 0.75;
+    const oceanCss = "#" + new THREE.Color().setRGB(...mtl.ocean.Kd, THREE.LinearSRGBColorSpace).getHexString();
+    const landCss = "#" + new THREE.Color().setRGB(...mtl.land.Kd, THREE.LinearSRGBColorSpace).getHexString();
+    const brassCss = "#" + new THREE.Color().setRGB(...mtl.brass.Kd, THREE.LinearSRGBColorSpace).getHexString();
+
+    // ---------- Globe assembly ----------
+    const R = 1;
+    const TILT = THREE.MathUtils.degToRad(23.4);
+    const assembly = new THREE.Group();
+    scene.add(assembly);
+
+    const tilted = new THREE.Group();
+    tilted.rotation.z = -TILT;
+    assembly.add(tilted);
+
+    const globe = new THREE.Group();
+    tilted.add(globe);
+
+    // Map texture painted on a canvas (ocean + land + borders + graticule).
+    const texCanvas = document.createElement("canvas");
+    texCanvas.width = 4096; texCanvas.height = 2048;
+    const mapTex = new THREE.CanvasTexture(texCanvas);
+    mapTex.colorSpace = THREE.SRGBColorSpace;
+    mapTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+    function paintMap(countries) {
+      const ctx = texCanvas.getContext("2d");
+      const W = texCanvas.width, H = texCanvas.height;
+      const px = (lon) => ((lon + 180) / 360) * W;
+      const py = (lat) => ((90 - lat) / 180) * H;
+
+      ctx.fillStyle = oceanCss;
+      ctx.fillRect(0, 0, W, H);
+      // Subtle latitude shading on the ocean.
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, "rgba(255,255,255,0.05)");
+      g.addColorStop(0.5, "rgba(255,255,255,0)");
+      g.addColorStop(1, "rgba(0,0,0,0.12)");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+      // Graticule.
+      ctx.strokeStyle = brassCss; ctx.globalAlpha = 0.22; ctx.lineWidth = 1.5;
+      for (let lon = -180; lon <= 180; lon += 15) { ctx.beginPath(); ctx.moveTo(px(lon), 0); ctx.lineTo(px(lon), H); ctx.stroke(); }
+      for (let lat = -75; lat <= 75; lat += 15) { ctx.beginPath(); ctx.moveTo(0, py(lat)); ctx.lineTo(W, py(lat)); ctx.stroke(); }
+      ctx.globalAlpha = 0.45; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(0, py(0)); ctx.lineTo(W, py(0)); ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      if (!countries) { mapTex.needsUpdate = true; return; }
+
+      const tracePolys = (geom) => {
+        const polys = geom.type === "Polygon" ? [geom.coordinates] : geom.type === "MultiPolygon" ? geom.coordinates : [];
+        for (const poly of polys) for (const ring of poly) {
+          let prevX = null;
+          ring.forEach(([lon, lat], i) => {
+            const x = px(lon), y = py(lat);
+            if (i === 0 || Math.abs(x - prevX) > W / 2) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            prevX = x;
+          });
+          ctx.closePath();
+        }
+      };
+
+      // Soft shadow under coastlines, then land, then borders.
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.35)"; ctx.shadowBlur = 10;
+      ctx.fillStyle = landCss;
+      ctx.beginPath();
+      countries.features.forEach((f) => f.geometry && tracePolys(f.geometry));
+      ctx.fill("evenodd");
+      ctx.restore();
+
+      ctx.strokeStyle = "rgba(110, 78, 40, 0.55)"; ctx.lineWidth = 1.6; ctx.lineJoin = "round";
+      countries.features.forEach((f) => { if (!f.geometry) return; ctx.beginPath(); tracePolys(f.geometry); ctx.stroke(); });
+
+      mapTex.needsUpdate = true;
+    }
+    paintMap(null);
+
+    const sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(R, 128, 96),
+      new THREE.MeshStandardMaterial({ map: mapTex, roughness: 0.7, metalness: 0.0, envMapIntensity: 0.5 })
+    );
+    globe.add(sphere);
+
+    fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json")
+      .then((r) => r.json())
+      .then((topo) => paintMap(topojson.feature(topo, topo.objects.countries)))
+      .catch(() => {})
+      .finally(() => document.getElementById("loader").classList.add("done"));
+
+    // Meridian ring, axis caps, stand and wooden base.
+    const ringR = R * 1.075;
+    const meridian = new THREE.Mesh(new THREE.TorusGeometry(ringR, 0.02, 24, 200), M.brass);
+    tilted.add(meridian);
+    for (const s of [1, -1]) {
+      const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, ringR - R + 0.03, 16), M.brass);
+      cap.position.y = s * (R + (ringR - R) / 2);
+      tilted.add(cap);
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.035, 24, 16), M.brass);
+      knob.position.y = s * (ringR + 0.02);
+      tilted.add(knob);
+    }
+
+    const stemTop = -ringR, baseY = -1.62;
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.05, stemTop - baseY - 0.2, 24), M.brass);
+    stem.position.y = (stemTop + baseY + 0.2) / 2;
+    assembly.add(stem);
+    const collar = new THREE.Mesh(new THREE.SphereGeometry(0.07, 24, 16), M.brass);
+    collar.position.y = stemTop - 0.05;
+    assembly.add(collar);
+    const flare = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.22, 0.2, 48), M.brass);
+    flare.position.y = baseY + 0.1 + 0.06;
+    assembly.add(flare);
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.7, 0.12, 96), M.wood);
+    base.position.y = baseY;
+    assembly.add(base);
+    const baseTrim = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.012, 12, 128), M.brass);
+    baseTrim.rotation.x = Math.PI / 2;
+    baseTrim.position.y = baseY + 0.06;
+    assembly.add(baseTrim);
+
+    // ---------- Pins ----------
+    function latLonToVec(lat, lon, r = R) {
+      const phi = THREE.MathUtils.degToRad(lon + 180);
+      const theta = THREE.MathUtils.degToRad(lat);
+      return new THREE.Vector3(-Math.cos(phi) * Math.cos(theta), Math.sin(theta), Math.sin(phi) * Math.cos(theta)).multiplyScalar(r);
+    }
+
+    const pinLen = 0.045, headR = 0.011;
+    const stemGeo = new THREE.CylinderGeometry(0.0022, 0.0022, pinLen, 6);
+    stemGeo.translate(0, pinLen / 2, 0);
+    const headGeo = new THREE.SphereGeometry(headR, 16, 12);
+    const hitGeo = new THREE.SphereGeometry(headR * 2.4, 8, 6);
+    const hitMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+    const stemMat = new THREE.MeshStandardMaterial({ color: 0xd8d8d8, metalness: 1, roughness: 0.3 });
+    const wishMat = M.pin.clone();
+    wishMat.color.set(0xffc24a);
+    wishMat.emissive = new THREE.Color(0x6a4200);
+    const hoverMat = M.pin.clone();
+    hoverMat.emissive = new THREE.Color(0x802010);
+
+    const pins = [];
+    const hitTargets = [];
+    const up = new THREE.Vector3(0, 1, 0);
+    for (const cap of CAPS) {
+      const normal = latLonToVec(cap.lat, cap.lon, 1);
+      const g = new THREE.Group();
+      g.position.copy(normal).multiplyScalar(R);
+      g.quaternion.setFromUnitVectors(up, normal);
+      const stemM = new THREE.Mesh(stemGeo, stemMat);
+      const head = new THREE.Mesh(headGeo, M.pin);
+      head.position.y = pinLen;
+      const hit = new THREE.Mesh(hitGeo, hitMat);
+      hit.position.y = pinLen;
+      hit.userData.cap = cap;
+      g.add(stemM, head, hit);
+      globe.add(g);
+      const pin = { cap, group: g, head, hit };
+      hit.userData.pin = pin;
+      pins.push(pin);
+      hitTargets.push(hit);
+    }
+
+    function refreshPinColors() {
+      const wish = new Set(U.getWishlist());
+      for (const p of pins) p.head.material = p === hovered ? hoverMat : wish.has(p.cap.c) ? wishMat : M.pin;
+      document.getElementById("tripCount").textContent = wish.size;
+    }
+
+    // ---------- Interaction ----------
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    const tooltip = document.getElementById("tooltip");
+    let hovered = null;
+    let autoSpin = true;
+    let idleTimer = null;
+    let tween = null;
+
+    function pickPin(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      pointer.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects([sphere, ...hitTargets], false);
+      // Ignore pins hidden behind the globe.
+      const sphereHit = hits.find((h) => h.object === sphere);
+      const pinHit = hits.find((h) => h.object !== sphere && (!sphereHit || h.distance < sphereHit.distance + 0.01));
+      return pinHit ? pinHit.object.userData.pin : null;
+    }
+
+    function setHovered(pin, x, y) {
+      if (hovered !== pin) {
+        if (hovered) hovered.head.scale.setScalar(1);
+        hovered = pin;
+        if (pin) pin.head.scale.setScalar(1.6);
+        refreshPinColors();
+      }
+      canvas.style.cursor = pin ? "pointer" : "grab";
+      if (pin) {
+        tooltip.style.display = "flex";
+        tooltip.style.left = x + "px";
+        tooltip.style.top = y + "px";
+        tooltip.querySelector("img").src = U.flagUrl(pin.cap, 40);
+        tooltip.querySelector("strong").textContent = pin.cap.cap;
+        tooltip.querySelector("span").textContent = pin.cap.n;
+      } else {
+        tooltip.style.display = "none";
+      }
+    }
+
+    function pauseSpin() {
+      autoSpin = false;
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => { if (!tween && !cardOpen()) autoSpin = true; }, 9000);
+    }
+
+    let downAt = null;
+    canvas.addEventListener("pointerdown", (e) => { downAt = { x: e.clientX, y: e.clientY }; pauseSpin(); tween = null; });
+    canvas.addEventListener("pointermove", (e) => {
+      if (e.pointerType === "mouse") setHovered(pickPin(e.clientX, e.clientY), e.clientX, e.clientY);
+    });
+    canvas.addEventListener("pointerleave", () => setHovered(null));
+    canvas.addEventListener("pointerup", (e) => {
+      if (!downAt) return;
+      const moved = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y);
+      downAt = null;
+      if (moved > 6) return;
+      const pin = pickPin(e.clientX, e.clientY);
+      if (pin) visit(pin);
+    });
+    canvas.addEventListener("wheel", pauseSpin, { passive: true });
+
+    // Rotate the globe (and swing the camera) so a capital faces the viewer.
+    function focusPin(pin, { zoomTo = 3.0, duration = 1200 } = {}) {
+      autoSpin = false;
+      clearTimeout(idleTimer);
+      const local = latLonToVec(pin.cap.lat, pin.cap.lon, 1);
+      const camDir = camera.position.clone().sub(controls.target).normalize();
+      const invTilt = new THREE.Quaternion().setFromEuler(tilted.rotation).invert();
+      const d = camDir.clone().applyQuaternion(invTilt);
+      const thetaD = Math.atan2(d.x, d.z);
+      const thetaP = Math.atan2(local.x, local.z);
+      let targetRot = thetaD - thetaP;
+      const startRot = globe.rotation.y;
+      targetRot = startRot + Math.atan2(Math.sin(targetRot - startRot), Math.cos(targetRot - startRot));
+
+      // Where the pin will end up in world space.
+      const endWorld = local.clone()
+        .applyAxisAngle(up, targetRot)
+        .applyQuaternion(new THREE.Quaternion().setFromEuler(tilted.rotation));
+      const startOffset = camera.position.clone().sub(controls.target);
+      const startDist = startOffset.length();
+      const endDir = endWorld.clone().sub(controls.target).normalize();
+      // Keep within the orbit limits.
+      const sph = new THREE.Spherical().setFromVector3(endDir);
+      sph.phi = THREE.MathUtils.clamp(sph.phi, 0.25, controls.maxPolarAngle - 0.05);
+      endDir.setFromSpherical(sph);
+      const qStart = new THREE.Quaternion();
+      const qEnd = new THREE.Quaternion().setFromUnitVectors(startOffset.clone().normalize(), endDir);
+
+      return new Promise((resolve) => {
+        tween = { t0: performance.now(), duration, step(k) {
+          const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+          globe.rotation.y = startRot + (targetRot - startRot) * e;
+          const q = qStart.clone().slerp(qEnd, e);
+          const dist = startDist + (zoomTo - startDist) * e;
+          camera.position.copy(startOffset.clone().normalize().applyQuaternion(q).multiplyScalar(dist).add(controls.target));
+          if (k >= 1) { tween = null; resolve(); }
+        } };
+      });
+    }
+
+    function visit(pin) {
+      setHovered(null);
+      focusPin(pin, { zoomTo: 2.2, duration: 900 }).then(() => {
+        document.getElementById("fade").classList.add("on");
+        setTimeout(() => { location.href = `city.html?c=${pin.cap.c}`; }, 550);
+      });
+    }
+
+    // ---------- Preview card (search / surprise) ----------
+    const card = document.getElementById("card");
+    let cardPin = null;
+    const cardOpen = () => card.classList.contains("open");
+    function showCard(pin) {
+      cardPin = pin;
+      card.querySelector("img.flag").src = U.flagUrl(pin.cap, 80);
+      card.querySelector("h2").textContent = pin.cap.cap;
+      card.querySelector(".country").textContent = pin.cap.n;
+      card.querySelector(".explore").textContent = `Explore ${pin.cap.cap} →`;
+      card.classList.remove("open"); void card.offsetWidth; card.classList.add("open");
+      if (hovered) hovered.head.scale.setScalar(1);
+      pin.head.scale.setScalar(1.8);
+      hovered = pin; refreshPinColors();
+    }
+    card.querySelector(".close").onclick = () => { card.classList.remove("open"); if (cardPin) cardPin.head.scale.setScalar(1); hovered = null; refreshPinColors(); autoSpin = true; };
+    card.querySelector(".explore").onclick = () => cardPin && visit(cardPin);
+
+    function goTo(cap) {
+      const pin = pins.find((p) => p.cap === cap);
+      focusPin(pin).then(() => showCard(pin));
+    }
+
+    // ---------- Search ----------
+    const q = document.getElementById("q");
+    const results = document.getElementById("results");
+    const norm = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+    let activeIdx = 0, matches = [];
+    function renderResults() {
+      const term = norm(q.value.trim());
+      if (!term) { results.classList.remove("open"); return; }
+      matches = CAPS.filter((c) => norm(c.cap).includes(term) || norm(c.n).includes(term))
+        .sort((a, b) => (norm(a.cap).startsWith(term) || norm(a.n).startsWith(term) ? 0 : 1) - (norm(b.cap).startsWith(term) || norm(b.n).startsWith(term) ? 0 : 1))
+        .slice(0, 12);
+      activeIdx = 0;
+      results.innerHTML = matches.length
+        ? matches.map((c, i) => `<button data-i="${i}" class="${i === 0 ? "active" : ""}"><img src="${U.flagUrl(c, 40)}" alt="">${c.cap}<small>${c.n}</small></button>`).join("")
+        : `<div style="padding:10px;color:var(--muted);font-size:14px">No capital found</div>`;
+      results.classList.add("open");
+    }
+    function choose(i) {
+      const cap = matches[i];
+      if (!cap) return;
+      q.value = ""; results.classList.remove("open"); q.blur();
+      goTo(cap);
+    }
+    q.addEventListener("input", renderResults);
+    q.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        activeIdx = (activeIdx + (e.key === "ArrowDown" ? 1 : -1) + matches.length) % matches.length;
+        [...results.children].forEach((b, i) => b.classList.toggle("active", i === activeIdx));
+      } else if (e.key === "Enter") choose(activeIdx);
+      else if (e.key === "Escape") { q.value = ""; results.classList.remove("open"); }
+    });
+    results.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) choose(+b.dataset.i); });
+    document.addEventListener("click", (e) => { if (!e.target.closest(".search")) results.classList.remove("open"); });
+
+    document.getElementById("surprise").onclick = () => goTo(CAPS[Math.floor(Math.random() * CAPS.length)]);
+
+    // ---------- Trips (wishlist) panel ----------
+    const trips = document.getElementById("trips");
+    function renderTrips() {
+      const list = U.getWishlist().map(U.byCode).filter(Boolean);
+      document.getElementById("tripList").innerHTML = list.length
+        ? list.map((c) => `<li><a href="city.html?c=${c.c}"><img src="${U.flagUrl(c, 40)}" alt=""><span>${c.cap}<small>${c.n}</small></span></a></li>`).join("")
+        : `<p class="empty">No saved capitals yet. Open a city and tap <b>♥ Save</b> to start planning. Saved cities show as gold pins on the globe.</p>`;
+    }
+    document.getElementById("tripsBtn").onclick = () => { renderTrips(); trips.classList.add("open"); };
+    trips.querySelector(".close").onclick = () => trips.classList.remove("open");
+
+    // ---------- Resize + loop ----------
+    function resize() {
+      const w = innerWidth, h = innerHeight;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      // Pull back on narrow screens so the whole globe fits.
+      camera.fov = w < h ? 52 : 38;
+      camera.updateProjectionMatrix();
+    }
+    addEventListener("resize", resize);
+    resize();
+
+    const clock = new THREE.Clock();
+    renderer.setAnimationLoop(() => {
+      const dt = clock.getDelta();
+      if (tween) tween.step(Math.min(1, (performance.now() - tween.t0) / tween.duration));
+      else controls.update();
+      if (autoSpin && !hovered) globe.rotation.y += dt * 0.06;
+      renderer.render(scene, camera);
+    });
+
+    refreshPinColors();
+
+    // Coming back from a city page: turn the globe to that capital.
+    const focus = U.byCode(new URLSearchParams(location.search).get("focus"));
+    if (focus) {
+      history.replaceState(null, "", location.pathname);
+      setTimeout(() => goTo(focus), 400);
+    }
+    addEventListener("pageshow", (e) => { if (e.persisted) { document.getElementById("fade").classList.remove("on"); refreshPinColors(); } });
+  </script>
+</body>
+</html>
